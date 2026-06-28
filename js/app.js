@@ -4,9 +4,13 @@ const STORAGE_KEY = 'calendar_events';
 const MAX_PILLS = 3;
 const MOBILE_MAX_DOTS = 5;
 const MOBILE_BREAKPOINT = 767;
+const HOUR_PX = 60;
+const VIEW_LABELS = { day: 'Day', week: 'Week', month: 'Month', year: 'Year', schedule: 'Schedule', '4days': '4 days' };
 
 let currentYear;
 let currentMonth;
+let currentDay;
+let currentView = 'month';
 let events = [];
 let editingId = null;
 let modalTrigger = null;
@@ -68,7 +72,6 @@ function buildGridCells(year, month, strict = false) {
   const daysInMonth = getDaysInMonth(year, month);
   const cells = [];
 
-  // Pad start with trailing days of previous month
   const prevMonth = month === 0 ? 11 : month - 1;
   const prevYear  = month === 0 ? year - 1 : year;
   const daysInPrev = getDaysInMonth(prevYear, prevMonth);
@@ -76,12 +79,10 @@ function buildGridCells(year, month, strict = false) {
     cells.push({ year: prevYear, month: prevMonth, day: daysInPrev - i, isCurrentMonth: false });
   }
 
-  // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ year, month, day: d, isCurrentMonth: true });
   }
 
-  // Pad end with leading days of next month — variable rows (5 or 6 weeks)
   const totalCells = strict
     ? Math.ceil((firstDay + daysInMonth) / 7) * 7
     : 42;
@@ -95,6 +96,347 @@ function buildGridCells(year, month, strict = false) {
   return cells;
 }
 
+// ===== View Management =====
+
+function setView(view) {
+  currentView = view;
+  const viewBtn = document.getElementById('btn-view-month');
+  viewBtn.innerHTML = `${VIEW_LABELS[view] || 'Month'} <span class="dropdown-caret">&#9662;</span>`;
+  document.querySelectorAll('.view-opt').forEach(btn => {
+    btn.classList.toggle('view-opt-active', btn.dataset.view === view);
+  });
+  renderCalendar();
+}
+
+function clearTimeView() {
+  const old = document.getElementById('time-view');
+  if (old) old.remove();
+}
+
+// ===== Navigation =====
+
+function navigateBy(dir) {
+  switch (currentView) {
+    case 'day': {
+      const d = new Date(currentYear, currentMonth, currentDay + dir);
+      currentYear = d.getFullYear(); currentMonth = d.getMonth(); currentDay = d.getDate();
+      break;
+    }
+    case 'week': {
+      const d = new Date(currentYear, currentMonth, currentDay + 7 * dir);
+      currentYear = d.getFullYear(); currentMonth = d.getMonth(); currentDay = d.getDate();
+      break;
+    }
+    case '4days': {
+      const d = new Date(currentYear, currentMonth, currentDay + 4 * dir);
+      currentYear = d.getFullYear(); currentMonth = d.getMonth(); currentDay = d.getDate();
+      break;
+    }
+    case 'year':
+      currentYear += dir;
+      break;
+    default:
+      currentMonth += dir;
+      if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+      if (currentMonth > 11) { currentMonth = 0;  currentYear++; }
+  }
+  renderCalendar();
+}
+
+function prevMonth() { navigateBy(-1); }
+function nextMonth() { navigateBy(1); }
+
+function goToToday() {
+  const today = new Date();
+  currentYear  = today.getFullYear();
+  currentMonth = today.getMonth();
+  currentDay   = today.getDate();
+  renderCalendar();
+}
+
+// ===== Main Render Dispatcher =====
+
+function renderCalendar() {
+  clearTimeView();
+  const dayHeaders = document.getElementById('day-headers');
+  const grid = document.getElementById('calendar-grid');
+
+  if (currentView === 'month') {
+    dayHeaders.style.display = '';
+    grid.style.display = '';
+    renderMonthView();
+  } else {
+    dayHeaders.style.display = 'none';
+    grid.style.display = 'none';
+    if      (currentView === 'day')      renderDayView();
+    else if (currentView === 'week')     renderWeekView();
+    else if (currentView === '4days')    renderFourDayView();
+    else if (currentView === 'year')     renderYearView();
+    else if (currentView === 'schedule') renderScheduleView();
+  }
+
+  renderMiniCalendar();
+}
+
+// ===== Month View =====
+
+function renderMonthView() {
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+  document.getElementById('month-label').textContent = formatMonthLabel(currentYear, currentMonth);
+  const liveEl = document.getElementById('cal-live');
+  if (liveEl) liveEl.textContent = formatMonthLabel(currentYear, currentMonth);
+
+  const todayStr = getTodayStr();
+  const cells = buildGridCells(currentYear, currentMonth, true);
+  cells.forEach(({ year, month, day, isCurrentMonth }) => {
+    const dateStr = formatDateStr(year, month, day);
+    grid.appendChild(buildDayCell(dateStr, day, isCurrentMonth, dateStr === todayStr));
+  });
+}
+
+// ===== Day / Week / 4-Day Time Grid =====
+
+function renderTimeGrid(dates) {
+  const main = document.getElementById('main');
+
+  const timeView = document.createElement('div');
+  timeView.id = 'time-view';
+
+  // Column header row
+  const hdr = document.createElement('div');
+  hdr.className = 'tv-header';
+  const gutterHdr = document.createElement('div');
+  gutterHdr.className = 'tv-gutter-cell';
+  hdr.appendChild(gutterHdr);
+
+  const todayStr = getTodayStr();
+  dates.forEach(dateStr => {
+    const dt = new Date(dateStr + 'T00:00:00');
+    const col = document.createElement('div');
+    col.className = 'tv-day-hdr' + (dateStr === todayStr ? ' tv-today-hdr' : '');
+    const dow = document.createElement('span');
+    dow.className = 'tv-dow';
+    dow.textContent = dt.toLocaleString('default', { weekday: 'short' });
+    const num = document.createElement('span');
+    num.className = 'tv-day-num' + (dateStr === todayStr ? ' tv-today-num' : '');
+    num.textContent = dt.getDate();
+    col.appendChild(dow);
+    col.appendChild(num);
+    hdr.appendChild(col);
+  });
+  timeView.appendChild(hdr);
+
+  // Scrollable body
+  const body = document.createElement('div');
+  body.className = 'tv-body';
+  const inner = document.createElement('div');
+  inner.className = 'tv-inner';
+
+  // Time gutter
+  const gutter = document.createElement('div');
+  gutter.className = 'tv-gutter';
+  for (let h = 0; h < 24; h++) {
+    const slot = document.createElement('div');
+    slot.className = 'tv-gutter-slot';
+    if (h > 0) {
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12 = h % 12 || 12;
+      slot.textContent = `${h12} ${ampm}`;
+    }
+    gutter.appendChild(slot);
+  }
+  inner.appendChild(gutter);
+
+  // Day columns
+  dates.forEach(dateStr => {
+    const col = document.createElement('div');
+    col.className = 'tv-day-col';
+
+    // Hour cells (background grid)
+    for (let h = 0; h < 24; h++) {
+      const cell = document.createElement('div');
+      cell.className = 'tv-hour-cell';
+      cell.addEventListener('click', () => openAddModal(dateStr));
+      col.appendChild(cell);
+    }
+
+    // Events
+    getEventsForDate(dateStr).filter(ev => ev.startTime).forEach(ev => {
+      const [sh, sm] = ev.startTime.split(':').map(Number);
+      const endParts = ev.endTime ? ev.endTime.split(':').map(Number) : [sh + 1, sm];
+      const [eh, em] = endParts;
+      const startMin = sh * 60 + sm;
+      const endMin   = eh * 60 + em;
+      const pill = document.createElement('div');
+      pill.className = `tv-event evt-${ev.color}`;
+      pill.style.top    = `${startMin * HOUR_PX / 60}px`;
+      pill.style.height = `${Math.max((endMin - startMin) * HOUR_PX / 60, 22)}px`;
+      pill.textContent  = ev.startTime + ' ' + ev.title;
+      pill.title        = ev.title;
+      pill.addEventListener('click', e => { e.stopPropagation(); openEditModal(ev); });
+      col.appendChild(pill);
+    });
+
+    inner.appendChild(col);
+  });
+
+  body.appendChild(inner);
+  timeView.appendChild(body);
+  main.appendChild(timeView);
+
+  // Scroll to 7am
+  requestAnimationFrame(() => { body.scrollTop = 7 * HOUR_PX; });
+}
+
+function renderDayView() {
+  const date = new Date(currentYear, currentMonth, currentDay);
+  document.getElementById('month-label').textContent =
+    date.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  renderTimeGrid([formatDateStr(currentYear, currentMonth, currentDay)]);
+}
+
+function renderWeekView() {
+  const date = new Date(currentYear, currentMonth, currentDay);
+  const weekStart = new Date(date);
+  weekStart.setDate(date.getDate() - date.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const s = weekStart.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+  const e = weekEnd.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('month-label').textContent = `${s} – ${e}`;
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+  });
+  renderTimeGrid(dates);
+}
+
+function renderFourDayView() {
+  const date = new Date(currentYear, currentMonth, currentDay);
+  const end  = new Date(date);
+  end.setDate(date.getDate() + 3);
+  const s = date.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+  const e = end.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('month-label').textContent = `${s} – ${e}`;
+  const dates = Array.from({ length: 4 }, (_, i) => {
+    const d = new Date(date);
+    d.setDate(date.getDate() + i);
+    return formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+  });
+  renderTimeGrid(dates);
+}
+
+// ===== Year View =====
+
+function renderYearView() {
+  document.getElementById('month-label').textContent = String(currentYear);
+  const main = document.getElementById('main');
+  const yearView = document.createElement('div');
+  yearView.id = 'time-view';
+  yearView.className = 'year-view';
+
+  const todayStr = getTodayStr();
+
+  for (let m = 0; m < 12; m++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'year-mini-wrap';
+
+    const label = document.createElement('div');
+    label.className = 'year-mini-label';
+    label.textContent = new Date(currentYear, m, 1).toLocaleString('default', { month: 'long' });
+    label.addEventListener('click', () => { currentMonth = m; setView('month'); });
+    wrap.appendChild(label);
+
+    const miniGrid = document.createElement('div');
+    miniGrid.className = 'year-mini-grid';
+
+    ['S','M','T','W','T','F','S'].forEach(d => {
+      const s = document.createElement('span');
+      s.className = 'year-mini-dow';
+      s.textContent = d;
+      miniGrid.appendChild(s);
+    });
+
+    buildGridCells(currentYear, m).forEach(({ year, month, day, isCurrentMonth }) => {
+      const ds = formatDateStr(year, month, day);
+      const cell = document.createElement('div');
+      cell.className = 'year-mini-day';
+      if (!isCurrentMonth) cell.classList.add('year-mini-outside');
+      if (ds === todayStr) cell.classList.add('year-mini-today');
+      if (isCurrentMonth && getEventsForDate(ds).length > 0) cell.classList.add('year-mini-has-events');
+      cell.textContent = day;
+      cell.addEventListener('click', () => {
+        currentYear = year; currentMonth = month; currentDay = day;
+        setView('month');
+      });
+      miniGrid.appendChild(cell);
+    });
+
+    wrap.appendChild(miniGrid);
+    yearView.appendChild(wrap);
+  }
+
+  main.appendChild(yearView);
+}
+
+// ===== Schedule View =====
+
+function renderScheduleView() {
+  document.getElementById('month-label').textContent = 'Schedule';
+  const main = document.getElementById('main');
+  const schedView = document.createElement('div');
+  schedView.id = 'time-view';
+  schedView.className = 'schedule-view';
+
+  const today = new Date();
+  let hasAny = false;
+
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dateStr = formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayEvts = getEventsForDate(dateStr);
+    if (dayEvts.length === 0) continue;
+    hasAny = true;
+
+    const dateLbl = document.createElement('div');
+    dateLbl.className = 'sched-date-label';
+    dateLbl.textContent = d.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    schedView.appendChild(dateLbl);
+
+    dayEvts.forEach(ev => {
+      const item = document.createElement('div');
+      item.className = 'sched-event';
+
+      const dot = document.createElement('span');
+      dot.className = `sched-dot evt-${ev.color}`;
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'sched-time';
+      timeSpan.textContent = ev.startTime || 'All day';
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'sched-title';
+      titleSpan.textContent = ev.title;
+
+      item.appendChild(dot);
+      item.appendChild(timeSpan);
+      item.appendChild(titleSpan);
+      item.addEventListener('click', () => openEditModal(ev));
+      schedView.appendChild(item);
+    });
+  }
+
+  if (!hasAny) {
+    const empty = document.createElement('div');
+    empty.className = 'sched-empty';
+    empty.textContent = 'No upcoming events in the next 90 days';
+    schedView.appendChild(empty);
+  }
+
+  main.appendChild(schedView);
+}
+
 // ===== Rendering =====
 
 function isMobile() {
@@ -104,24 +446,6 @@ function isMobile() {
 function getTodayStr() {
   const t = new Date();
   return formatDateStr(t.getFullYear(), t.getMonth(), t.getDate());
-}
-
-function renderCalendar() {
-  const grid = document.getElementById('calendar-grid');
-  grid.innerHTML = '';
-  document.getElementById('month-label').textContent = formatMonthLabel(currentYear, currentMonth);
-  const liveEl = document.getElementById('cal-live');
-  if (liveEl) liveEl.textContent = formatMonthLabel(currentYear, currentMonth);
-
-  const todayStr = getTodayStr();
-  const cells = buildGridCells(currentYear, currentMonth, true);
-
-  cells.forEach(({ year, month, day, isCurrentMonth }) => {
-    const dateStr = formatDateStr(year, month, day);
-    grid.appendChild(buildDayCell(dateStr, day, isCurrentMonth, dateStr === todayStr));
-  });
-
-  renderMiniCalendar();
 }
 
 function renderMiniCalendar() {
@@ -153,6 +477,7 @@ function renderMiniCalendar() {
     cell.addEventListener('click', () => {
       currentYear  = year;
       currentMonth = month;
+      currentDay   = day;
       renderCalendar();
       if (isCurrentMonth) openAddModal(dateStr);
     });
@@ -171,7 +496,6 @@ function buildDayCell(dateStr, day, isCurrentMonth, isToday) {
   if (!isCurrentMonth) cell.classList.add('outside');
   if (isToday) cell.classList.add('today');
 
-  // Weekend detection from the date string itself (avoids any month ambiguity)
   const dow = new Date(dateStr + 'T00:00:00').getDay();
   if (dow === 0 || dow === 6) cell.classList.add('weekend');
 
@@ -291,7 +615,6 @@ function closeModal() {
 
 function resetForm() {
   document.getElementById('event-form').reset();
-  // form.reset() restores the checked attribute from HTML (blue is default)
 }
 
 // ===== Focus Trap =====
@@ -451,36 +774,9 @@ function seedDemoData() {
   localStorage.setItem('calendar_seeded', '1');
 }
 
-// ===== Weekends Toggle =====
-
-function loadWeekends() {
-  showWeekends = localStorage.getItem('calendar_show_weekends') !== 'false';
-  applyWeekendsClass();
-  syncWeekendsToggle();
-}
-
-function applyWeekendsClass() {
-  document.documentElement.classList.toggle('hide-weekends', !showWeekends);
-}
-
-function syncWeekendsToggle() {
-  const btn = document.getElementById('toggle-weekends');
-  if (!btn) return;
-  btn.classList.toggle('unchecked', !showWeekends);
-  btn.setAttribute('aria-checked', showWeekends ? 'true' : 'false');
-}
-
-function toggleWeekends() {
-  showWeekends = !showWeekends;
-  localStorage.setItem('calendar_show_weekends', showWeekends);
-  applyWeekendsClass();
-  syncWeekendsToggle();
-}
-
 // ===== Theme =====
 
 function loadTheme() {
-  // Dark is default (no attribute). Light is opt-in via data-theme="light".
   if (localStorage.getItem('calendar_theme') === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
   }
@@ -507,25 +803,30 @@ function syncThemeButton() {
   btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
 }
 
-// ===== Navigation =====
+// ===== Weekends Toggle =====
 
-function prevMonth() {
-  if (currentMonth === 0) { currentMonth = 11; currentYear--; }
-  else { currentMonth--; }
-  renderCalendar();
+function loadWeekends() {
+  showWeekends = localStorage.getItem('calendar_show_weekends') !== 'false';
+  applyWeekendsClass();
+  syncWeekendsToggle();
 }
 
-function nextMonth() {
-  if (currentMonth === 11) { currentMonth = 0; currentYear++; }
-  else { currentMonth++; }
-  renderCalendar();
+function applyWeekendsClass() {
+  document.documentElement.classList.toggle('hide-weekends', !showWeekends);
 }
 
-function goToToday() {
-  const today = new Date();
-  currentYear  = today.getFullYear();
-  currentMonth = today.getMonth();
-  renderCalendar();
+function syncWeekendsToggle() {
+  const btn = document.getElementById('toggle-weekends');
+  if (!btn) return;
+  btn.classList.toggle('unchecked', !showWeekends);
+  btn.setAttribute('aria-checked', showWeekends ? 'true' : 'false');
+}
+
+function toggleWeekends() {
+  showWeekends = !showWeekends;
+  localStorage.setItem('calendar_show_weekends', showWeekends);
+  applyWeekendsClass();
+  syncWeekendsToggle();
 }
 
 // ===== Init =====
@@ -536,8 +837,8 @@ function init() {
   const today = new Date();
   currentYear  = today.getFullYear();
   currentMonth = today.getMonth();
+  currentDay   = today.getDate();
 
-  // Populate the logo badge with today's date
   const logoDateEl = document.getElementById('logo-date');
   if (logoDateEl) logoDateEl.textContent = today.getDate();
 
@@ -552,29 +853,33 @@ function init() {
 
   viewBtn.addEventListener('click', e => {
     e.stopPropagation();
-    const isOpen = !viewDropdown.classList.contains('hidden');
+    const opening = viewDropdown.classList.contains('hidden');
     viewDropdown.classList.toggle('hidden');
-    viewBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    viewBtn.setAttribute('aria-expanded', opening ? 'true' : 'false');
   });
 
+  // Close dropdown when clicking outside
   document.addEventListener('click', () => {
-    if (!viewDropdown.classList.contains('hidden')) {
-      viewDropdown.classList.add('hidden');
-      viewBtn.setAttribute('aria-expanded', 'false');
-    }
+    viewDropdown.classList.add('hidden');
+    viewBtn.setAttribute('aria-expanded', 'false');
   });
 
+  // Stop clicks inside the dropdown from closing it via document listener
   viewDropdown.addEventListener('click', e => e.stopPropagation());
 
+  // View option buttons
   document.querySelectorAll('.view-opt').forEach(btn => {
     btn.addEventListener('click', () => {
       viewDropdown.classList.add('hidden');
       viewBtn.setAttribute('aria-expanded', 'false');
+      setView(btn.dataset.view);
     });
   });
 
+  // Weekend toggle
   document.getElementById('toggle-weekends').addEventListener('click', toggleWeekends);
 
+  // Declined / completed toggles (UI only)
   ['toggle-declined', 'toggle-completed'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -585,6 +890,7 @@ function init() {
     });
   });
 
+  // ===== Standard nav =====
   document.getElementById('btn-prev').addEventListener('click', prevMonth);
   document.getElementById('btn-next').addEventListener('click', nextMonth);
   document.getElementById('btn-today').addEventListener('click', goToToday);
@@ -592,7 +898,6 @@ function init() {
   document.getElementById('mini-prev').addEventListener('click', prevMonth);
   document.getElementById('mini-next').addEventListener('click', nextMonth);
 
-  // + Create opens add modal for today
   const btnCreate = document.getElementById('btn-create');
   if (btnCreate) btnCreate.addEventListener('click', () => openAddModal(getTodayStr()));
 
@@ -602,12 +907,10 @@ function init() {
     if (editingId) deleteEvent(editingId);
   });
 
-  // Close on backdrop click
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
 
-  // Escape closes modal and dropdown; focus trap on Tab
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       viewDropdown.classList.add('hidden');
@@ -619,7 +922,6 @@ function init() {
     if (e.key === 'Tab') trapFocus(e);
   });
 
-  // Re-render on resize to swap between pills and dots
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
