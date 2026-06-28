@@ -8,30 +8,68 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
-  <div id="app">
-    <header id="calendar-header">
-      <div class="header-left">
-        <button id="btn-today">Today</button>
-        <button id="btn-prev" aria-label="Previous month">&#8249;</button>
-        <button id="btn-next" aria-label="Next month">&#8250;</button>
+  <div id="layout">
+
+    <!-- ===== Sidebar ===== -->
+    <aside id="sidebar">
+      <div id="sidebar-logo">
+        <button id="btn-menu" aria-label="Menu">&#9776;</button>
+        <span id="sidebar-title">Calendar</span>
       </div>
-      <h1 id="month-label"></h1>
-      <button id="btn-theme" aria-label="Switch to dark mode">&#9790;</button>
-    </header>
 
-    <div id="day-headers" aria-hidden="true">
-      <span>Sun</span>
-      <span>Mon</span>
-      <span>Tue</span>
-      <span>Wed</span>
-      <span>Thu</span>
-      <span>Fri</span>
-      <span>Sat</span>
+      <div id="mini-cal">
+        <div id="mini-cal-header">
+          <span id="mini-cal-label"></span>
+          <div class="mini-cal-nav">
+            <button id="mini-prev" aria-label="Previous month">&#8249;</button>
+            <button id="mini-next" aria-label="Next month">&#8250;</button>
+          </div>
+        </div>
+        <div id="mini-cal-dow" aria-hidden="true">
+          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div id="mini-cal-grid"></div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div id="sidebar-section">
+        <h3 class="sidebar-section-title">My calendars</h3>
+        <ul id="sidebar-cal-list">
+          <li><span class="cal-dot" style="background:#1a73e8"></span>Personal</li>
+          <li><span class="cal-dot" style="background:#10B981"></span>Birthdays</li>
+          <li><span class="cal-dot" style="background:#8B5CF6"></span>Tasks</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <div id="main">
+      <header id="calendar-header">
+        <div class="header-left">
+          <button id="btn-today">Today</button>
+          <button id="btn-prev" aria-label="Previous month">&#8249;</button>
+          <button id="btn-next" aria-label="Next month">&#8250;</button>
+          <h1 id="month-label"></h1>
+        </div>
+        <button id="btn-theme" aria-label="Switch to light mode">&#9728;</button>
+      </header>
+
+      <div id="day-headers" aria-hidden="true">
+        <span>Sun</span>
+        <span>Mon</span>
+        <span>Tue</span>
+        <span>Wed</span>
+        <span>Thu</span>
+        <span>Fri</span>
+        <span>Sat</span>
+      </div>
+
+      <div id="calendar-grid" role="grid" aria-label="Calendar"></div>
     </div>
-
-    <div id="calendar-grid" role="grid" aria-label="Calendar"></div>
   </div>
 
+  <!-- ===== Modal ===== -->
   <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div id="modal">
       <h2 id="modal-title">Add Event</h2>

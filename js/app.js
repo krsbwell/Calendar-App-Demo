@@ -113,6 +113,38 @@ function renderCalendar() {
     const dateStr = formatDateStr(year, month, day);
     grid.appendChild(buildDayCell(dateStr, day, isCurrentMonth, dateStr === todayStr));
   });
+
+  renderMiniCalendar();
+}
+
+function renderMiniCalendar() {
+  const labelEl = document.getElementById('mini-cal-label');
+  const gridEl  = document.getElementById('mini-cal-grid');
+  if (!labelEl || !gridEl) return;
+
+  labelEl.textContent = new Date(currentYear, currentMonth, 1)
+    .toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  gridEl.innerHTML = '';
+  const todayStr = getTodayStr();
+  const cells = buildGridCells(currentYear, currentMonth);
+
+  cells.forEach(({ year, month, day, isCurrentMonth }) => {
+    const dateStr = formatDateStr(year, month, day);
+    const cell = document.createElement('div');
+    cell.className = 'mini-day';
+    if (!isCurrentMonth) cell.classList.add('mini-outside');
+    if (dateStr === todayStr) cell.classList.add('mini-today');
+    cell.textContent = day;
+    cell.setAttribute('aria-label', dateStr);
+    cell.addEventListener('click', () => {
+      currentYear  = year;
+      currentMonth = month;
+      renderCalendar();
+      if (isCurrentMonth) openAddModal(dateStr);
+    });
+    gridEl.appendChild(cell);
+  });
 }
 
 function buildDayCell(dateStr, day, isCurrentMonth, isToday) {
@@ -393,20 +425,21 @@ function seedDemoData() {
 // ===== Theme =====
 
 function loadTheme() {
-  if (localStorage.getItem('calendar_theme') === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
+  // Dark is default (no attribute). Light is opt-in via data-theme="light".
+  if (localStorage.getItem('calendar_theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
   }
   syncThemeButton();
 }
 
 function toggleTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (isDark) {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if (isLight) {
     document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('calendar_theme', 'light');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('calendar_theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('calendar_theme', 'light');
   }
   syncThemeButton();
 }
@@ -414,9 +447,9 @@ function toggleTheme() {
 function syncThemeButton() {
   const btn = document.getElementById('btn-theme');
   if (!btn) return;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  btn.textContent = isDark ? '☀' : '☽'; // ☀ : ☾
-  btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  btn.textContent = isLight ? '☽' : '☀';
+  btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
 }
 
 // ===== Navigation =====
@@ -457,6 +490,8 @@ function init() {
   document.getElementById('btn-next').addEventListener('click', nextMonth);
   document.getElementById('btn-today').addEventListener('click', goToToday);
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+  document.getElementById('mini-prev').addEventListener('click', prevMonth);
+  document.getElementById('mini-next').addEventListener('click', nextMonth);
 
   document.getElementById('event-form').addEventListener('submit', handleFormSubmit);
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
