@@ -11,10 +11,14 @@ let currentYear;
 let currentMonth;
 let currentDay;
 let currentView = 'month';
+let defaultView = 'month';
+let weekStartDay = 0; // 0=Sunday, 1=Monday
 let events = [];
 let editingId = null;
 let modalTrigger = null;
-let showWeekends = true;
+let showWeekends  = true;
+let showDeclined  = true;
+let showCompleted = true;
 
 // ===== LocalStorage =====
 
@@ -58,7 +62,12 @@ function formatMonthLabel(year, month) {
 
 function getEventsForDate(dateStr) {
   return events
-    .filter(e => e.date === dateStr)
+    .filter(e => {
+      if (e.date !== dateStr) return false;
+      if (e.status === 'declined'  && !showDeclined)  return false;
+      if (e.status === 'completed' && !showCompleted) return false;
+      return true;
+    })
     .sort((a, b) => {
       if (!a.startTime && !b.startTime) return 0;
       if (!a.startTime) return 1;
@@ -94,6 +103,11 @@ function buildGridCells(year, month, strict = false) {
   }
 
   return cells;
+}
+
+function isWeekend(dateStr) {
+  const dow = new Date(dateStr + 'T00:00:00').getDay();
+  return dow === 0 || dow === 6;
 }
 
 // ===== View Management =====
@@ -199,7 +213,6 @@ function renderMonthView() {
 
 function renderTimeGrid(dates) {
   const main = document.getElementById('main');
-
   const timeView = document.createElement('div');
   timeView.id = 'time-view';
 
@@ -253,7 +266,6 @@ function renderTimeGrid(dates) {
     const col = document.createElement('div');
     col.className = 'tv-day-col';
 
-    // Hour cells (background grid)
     for (let h = 0; h < 24; h++) {
       const cell = document.createElement('div');
       cell.className = 'tv-hour-cell';
@@ -261,7 +273,6 @@ function renderTimeGrid(dates) {
       col.appendChild(cell);
     }
 
-    // Events
     getEventsForDate(dateStr).filter(ev => ev.startTime).forEach(ev => {
       const [sh, sm] = ev.startTime.split(':').map(Number);
       const endParts = ev.endTime ? ev.endTime.split(':').map(Number) : [sh + 1, sm];
@@ -269,7 +280,8 @@ function renderTimeGrid(dates) {
       const startMin = sh * 60 + sm;
       const endMin   = eh * 60 + em;
       const pill = document.createElement('div');
-      pill.className = `tv-event evt-${ev.color}`;
+      const statusCls = ev.status === 'declined' ? ' status-declined' : ev.status === 'completed' ? ' status-completed' : '';
+      pill.className = `tv-event evt-${ev.color}${statusCls}`;
       pill.style.top    = `${startMin * HOUR_PX / 60}px`;
       pill.style.height = `${Math.max((endMin - startMin) * HOUR_PX / 60, 22)}px`;
       pill.textContent  = ev.startTime + ' ' + ev.title;
@@ -285,7 +297,6 @@ function renderTimeGrid(dates) {
   timeView.appendChild(body);
   main.appendChild(timeView);
 
-  // Scroll to 7am
   requestAnimationFrame(() => { body.scrollTop = 7 * HOUR_PX; });
 }
 
@@ -305,26 +316,30 @@ function renderWeekView() {
   const s = weekStart.toLocaleDateString('default', { month: 'short', day: 'numeric' });
   const e = weekEnd.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
   document.getElementById('month-label').textContent = `${s} – ${e}`;
-  const dates = Array.from({ length: 7 }, (_, i) => {
+
+  let dates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     return formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
   });
+  if (!showWeekends) dates = dates.filter(ds => !isWeekend(ds));
   renderTimeGrid(dates);
 }
 
 function renderFourDayView() {
-  const date = new Date(currentYear, currentMonth, currentDay);
-  const end  = new Date(date);
-  end.setDate(date.getDate() + 3);
-  const s = date.toLocaleDateString('default', { month: 'short', day: 'numeric' });
-  const e = end.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+  const base = new Date(currentYear, currentMonth, currentDay);
+  const dates = [];
+  const cursor = new Date(base);
+  while (dates.length < 4) {
+    const ds = formatDateStr(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+    if (showWeekends || !isWeekend(ds)) dates.push(ds);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  const startDt = new Date(dates[0] + 'T00:00:00');
+  const endDt   = new Date(dates[dates.length - 1] + 'T00:00:00');
+  const s = startDt.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+  const e = endDt.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
   document.getElementById('month-label').textContent = `${s} – ${e}`;
-  const dates = Array.from({ length: 4 }, (_, i) => {
-    const d = new Date(date);
-    d.setDate(date.getDate() + i);
-    return formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
-  });
   renderTimeGrid(dates);
 }
 
@@ -409,7 +424,6 @@ function renderScheduleView() {
     dayEvts.forEach(ev => {
       const item = document.createElement('div');
       item.className = 'sched-event';
-
       const dot = document.createElement('span');
       dot.className = `sched-dot evt-${ev.color}`;
       const timeSpan = document.createElement('span');
@@ -417,8 +431,9 @@ function renderScheduleView() {
       timeSpan.textContent = ev.startTime || 'All day';
       const titleSpan = document.createElement('span');
       titleSpan.className = 'sched-title';
+      if (ev.status === 'completed') titleSpan.classList.add('sched-completed');
+      if (ev.status === 'declined')  titleSpan.classList.add('sched-declined');
       titleSpan.textContent = ev.title;
-
       item.appendChild(dot);
       item.appendChild(timeSpan);
       item.appendChild(titleSpan);
@@ -538,7 +553,8 @@ function renderEventPills(cell, dateStr) {
 
   shown.forEach(ev => {
     const pill = document.createElement('div');
-    pill.className = `event-pill evt-${ev.color}`;
+    const statusCls = ev.status === 'declined' ? ' status-declined' : ev.status === 'completed' ? ' status-completed' : '';
+    pill.className = `event-pill evt-${ev.color}${statusCls}`;
 
     if (!mobile) {
       const prefix = ev.startTime ? ev.startTime + ' ' : '';
@@ -576,6 +592,7 @@ function openAddModal(dateStr) {
   document.getElementById('modal-title').textContent = 'Add Event';
   resetForm();
   document.getElementById('event-date').value = dateStr;
+  document.getElementById('event-status').value = 'normal';
   document.getElementById('btn-delete').classList.add('hidden');
   showModal();
   document.getElementById('event-title').focus();
@@ -592,6 +609,7 @@ function openEditModal(ev) {
   document.getElementById('event-start').value = ev.startTime || '';
   document.getElementById('event-end').value = ev.endTime || '';
   document.getElementById('event-desc').value = ev.description || '';
+  document.getElementById('event-status').value = ev.status || 'normal';
 
   const colorInput = document.querySelector(`input[name="event-color"][value="${ev.color}"]`);
   if (colorInput) colorInput.checked = true;
@@ -617,11 +635,59 @@ function resetForm() {
   document.getElementById('event-form').reset();
 }
 
+// ===== Settings Modal =====
+
+function openSettingsModal() {
+  const themeSelect = document.getElementById('settings-theme-select');
+  themeSelect.value = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+  const dvSelect = document.getElementById('settings-default-view-select');
+  dvSelect.value = defaultView;
+
+  const wsSelect = document.getElementById('settings-week-start-select');
+  wsSelect.value = String(weekStartDay);
+
+  syncSettingsToggles();
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+function syncSettingsToggles() {
+  const weekendsBtn  = document.getElementById('settings-weekends-btn');
+  const declinedBtn  = document.getElementById('settings-declined-btn');
+  const completedBtn = document.getElementById('settings-completed-btn');
+
+  if (weekendsBtn)  { weekendsBtn.textContent  = showWeekends  ? 'On' : 'Off'; weekendsBtn.setAttribute('aria-pressed',  showWeekends  ? 'true' : 'false'); }
+  if (declinedBtn)  { declinedBtn.textContent  = showDeclined  ? 'On' : 'Off'; declinedBtn.setAttribute('aria-pressed',  showDeclined  ? 'true' : 'false'); }
+  if (completedBtn) { completedBtn.textContent = showCompleted ? 'On' : 'Off'; completedBtn.setAttribute('aria-pressed', showCompleted ? 'true' : 'false'); }
+}
+
+// ===== Toast =====
+
+function showToast(message) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('toast-show'));
+  });
+  setTimeout(() => {
+    toast.classList.remove('toast-show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 // ===== Focus Trap =====
 
 function trapFocus(e) {
   const modal = document.getElementById('modal');
-  const focusableSelectors = 'button, input, textarea, [tabindex="0"]';
+  const focusableSelectors = 'button, input, textarea, select, [tabindex="0"]';
   const focusable = Array.from(modal.querySelectorAll(focusableSelectors)).filter(el => {
     return !el.classList.contains('hidden') && !el.closest('.hidden');
   });
@@ -657,19 +723,10 @@ function validateForm() {
   const endTime   = document.getElementById('event-end').value;
   const errors    = {};
 
-  if (!title) {
-    errors.title = 'Title is required';
-  }
-
-  if (!date) {
-    errors.date = 'Date is required';
-  } else if (!isValidDate(date)) {
-    errors.date = 'Please enter a valid date';
-  }
-
-  if (startTime && endTime && endTime <= startTime) {
-    errors.time = 'End time must be after start time';
-  }
+  if (!title) errors.title = 'Title is required';
+  if (!date) errors.date = 'Date is required';
+  else if (!isValidDate(date)) errors.date = 'Please enter a valid date';
+  if (startTime && endTime && endTime <= startTime) errors.time = 'End time must be after start time';
 
   return { valid: Object.keys(errors).length === 0, errors };
 }
@@ -681,7 +738,6 @@ function showErrors(errors) {
 
   if (errors.title) document.getElementById('event-title').classList.add('invalid');
   else              document.getElementById('event-title').classList.remove('invalid');
-
   if (errors.date)  document.getElementById('event-date').classList.add('invalid');
   else              document.getElementById('event-date').classList.remove('invalid');
 }
@@ -705,6 +761,7 @@ function buildEventFromForm() {
     startTime:   document.getElementById('event-start').value || null,
     endTime:     document.getElementById('event-end').value   || null,
     description: document.getElementById('event-desc').value.trim(),
+    status:      document.getElementById('event-status').value || 'normal',
     color,
   };
 }
@@ -732,17 +789,11 @@ function deleteEvent(id) {
 function handleFormSubmit(e) {
   e.preventDefault();
   const { valid, errors } = validateForm();
-  if (!valid) {
-    showErrors(errors);
-    return;
-  }
+  if (!valid) { showErrors(errors); return; }
   clearErrors();
   const data = buildEventFromForm();
-  if (editingId) {
-    updateEvent(editingId, data);
-  } else {
-    createEvent(data);
-  }
+  if (editingId) updateEvent(editingId, data);
+  else createEvent(data);
   closeModal();
   renderCalendar();
 }
@@ -754,12 +805,12 @@ function seedDemoData() {
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const seeds = [
-    { day: 3,  title: 'Team standup',         color: 'blue',   startTime: '09:00', endTime: '09:30',  description: '' },
-    { day: 7,  title: 'Dentist appointment',  color: 'red',    startTime: '14:00', endTime: '15:00',  description: '' },
-    { day: 10, title: 'Project deadline',     color: 'orange', startTime: null,    endTime: null,     description: 'Final deliverable due' },
-    { day: 14, title: 'Lunch with Sarah',     color: 'green',  startTime: '12:30', endTime: '13:30',  description: '' },
-    { day: 18, title: 'Code review',          color: 'purple', startTime: '15:00', endTime: '16:00',  description: '' },
-    { day: 22, title: 'Weekly retrospective', color: 'teal',   startTime: '10:00', endTime: '11:00',  description: '' },
+    { day: 3,  title: 'Team standup',         color: 'blue',   startTime: '09:00', endTime: '09:30',  status: 'normal',    description: '' },
+    { day: 7,  title: 'Dentist appointment',  color: 'red',    startTime: '14:00', endTime: '15:00',  status: 'declined',  description: '' },
+    { day: 10, title: 'Project deadline',     color: 'orange', startTime: null,    endTime: null,     status: 'normal',    description: 'Final deliverable due' },
+    { day: 14, title: 'Lunch with Sarah',     color: 'green',  startTime: '12:30', endTime: '13:30',  status: 'normal',    description: '' },
+    { day: 18, title: 'Code review',          color: 'purple', startTime: '15:00', endTime: '16:00',  status: 'completed', description: '' },
+    { day: 22, title: 'Weekly retrospective', color: 'teal',   startTime: '10:00', endTime: '11:00',  status: 'normal',    description: '' },
   ];
 
   seeds.forEach(({ day, ...data }) => {
@@ -803,7 +854,7 @@ function syncThemeButton() {
   btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
 }
 
-// ===== Weekends Toggle =====
+// ===== Display Preference Toggles =====
 
 function loadWeekends() {
   showWeekends = localStorage.getItem('calendar_show_weekends') !== 'false';
@@ -827,12 +878,56 @@ function toggleWeekends() {
   localStorage.setItem('calendar_show_weekends', showWeekends);
   applyWeekendsClass();
   syncWeekendsToggle();
+  renderCalendar();
+}
+
+function loadDeclined() {
+  showDeclined = localStorage.getItem('calendar_show_declined') !== 'false';
+  syncDeclinedToggle();
+}
+
+function syncDeclinedToggle() {
+  const btn = document.getElementById('toggle-declined');
+  if (!btn) return;
+  btn.classList.toggle('unchecked', !showDeclined);
+  btn.setAttribute('aria-checked', showDeclined ? 'true' : 'false');
+}
+
+function toggleDeclined() {
+  showDeclined = !showDeclined;
+  localStorage.setItem('calendar_show_declined', showDeclined);
+  syncDeclinedToggle();
+  renderCalendar();
+}
+
+function loadCompleted() {
+  showCompleted = localStorage.getItem('calendar_show_completed') !== 'false';
+  syncCompletedToggle();
+}
+
+function syncCompletedToggle() {
+  const btn = document.getElementById('toggle-completed');
+  if (!btn) return;
+  btn.classList.toggle('unchecked', !showCompleted);
+  btn.setAttribute('aria-checked', showCompleted ? 'true' : 'false');
+}
+
+function toggleCompleted() {
+  showCompleted = !showCompleted;
+  localStorage.setItem('calendar_show_completed', showCompleted);
+  syncCompletedToggle();
+  renderCalendar();
 }
 
 // ===== Init =====
 
 function init() {
   loadEvents();
+
+  // Load persisted settings
+  defaultView  = localStorage.getItem('calendar_default_view')  || 'month';
+  weekStartDay = parseInt(localStorage.getItem('calendar_week_start') || '0', 10);
+  currentView  = defaultView;
 
   const today = new Date();
   currentYear  = today.getFullYear();
@@ -845,6 +940,8 @@ function init() {
   seedDemoData();
   loadTheme();
   loadWeekends();
+  loadDeclined();
+  loadCompleted();
   renderCalendar();
 
   // ===== View Dropdown =====
@@ -854,41 +951,102 @@ function init() {
   viewBtn.addEventListener('click', e => {
     e.stopPropagation();
     const opening = viewDropdown.classList.contains('hidden');
-    viewDropdown.classList.toggle('hidden');
-    viewBtn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    closeAllDropdowns();
+    if (opening) {
+      viewDropdown.classList.remove('hidden');
+      viewBtn.setAttribute('aria-expanded', 'true');
+    }
   });
 
-  // Close dropdown when clicking outside
-  document.addEventListener('click', () => {
-    viewDropdown.classList.add('hidden');
-    viewBtn.setAttribute('aria-expanded', 'false');
-  });
-
-  // Stop clicks inside the dropdown from closing it via document listener
   viewDropdown.addEventListener('click', e => e.stopPropagation());
 
-  // View option buttons
   document.querySelectorAll('.view-opt').forEach(btn => {
     btn.addEventListener('click', () => {
-      viewDropdown.classList.add('hidden');
-      viewBtn.setAttribute('aria-expanded', 'false');
+      closeAllDropdowns();
       setView(btn.dataset.view);
     });
   });
 
-  // Weekend toggle
   document.getElementById('toggle-weekends').addEventListener('click', toggleWeekends);
+  document.getElementById('toggle-declined').addEventListener('click', toggleDeclined);
+  document.getElementById('toggle-completed').addEventListener('click', toggleCompleted);
 
-  // Declined / completed toggles (UI only)
-  ['toggle-declined', 'toggle-completed'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('click', () => {
-      const checked = el.getAttribute('aria-checked') === 'true';
-      el.setAttribute('aria-checked', checked ? 'false' : 'true');
-      el.classList.toggle('unchecked', checked);
-    });
+  // ===== Settings Dropdown =====
+  const settingsDropdown = document.getElementById('settings-dropdown');
+  const settingsBtn      = document.getElementById('btn-settings');
+
+  settingsBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const opening = settingsDropdown.classList.contains('hidden');
+    closeAllDropdowns();
+    if (opening) {
+      settingsDropdown.classList.remove('hidden');
+      settingsBtn.setAttribute('aria-expanded', 'true');
+    }
   });
+
+  settingsDropdown.addEventListener('click', e => e.stopPropagation());
+
+  document.getElementById('sopt-settings').addEventListener('click', () => {
+    closeAllDropdowns();
+    openSettingsModal();
+  });
+  document.getElementById('sopt-trash').addEventListener('click', () => {
+    closeAllDropdowns();
+    showToast('Trash is empty');
+  });
+  document.getElementById('sopt-appearance').addEventListener('click', () => {
+    closeAllDropdowns();
+    openSettingsModal();
+  });
+  document.getElementById('sopt-print').addEventListener('click', () => {
+    closeAllDropdowns();
+    window.print();
+  });
+  document.getElementById('sopt-addons').addEventListener('click', () => {
+    closeAllDropdowns();
+    showToast('Add-ons are not available in this demo');
+  });
+
+  // ===== Settings Modal =====
+  document.getElementById('btn-settings-close').addEventListener('click', closeSettingsModal);
+  document.getElementById('settings-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('settings-overlay')) closeSettingsModal();
+  });
+
+  document.getElementById('btn-settings-done').addEventListener('click', () => {
+    // Apply theme
+    const themeVal = document.getElementById('settings-theme-select').value;
+    const isCurrentlyLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if ((themeVal === 'light') !== isCurrentlyLight) toggleTheme();
+
+    // Apply default view
+    defaultView = document.getElementById('settings-default-view-select').value;
+    localStorage.setItem('calendar_default_view', defaultView);
+
+    // Apply week start
+    weekStartDay = parseInt(document.getElementById('settings-week-start-select').value, 10);
+    localStorage.setItem('calendar_week_start', weekStartDay);
+
+    closeSettingsModal();
+  });
+
+  // Settings panel toggle buttons
+  document.getElementById('settings-weekends-btn').addEventListener('click', () => {
+    toggleWeekends();
+    syncSettingsToggles();
+  });
+  document.getElementById('settings-declined-btn').addEventListener('click', () => {
+    toggleDeclined();
+    syncSettingsToggles();
+  });
+  document.getElementById('settings-completed-btn').addEventListener('click', () => {
+    toggleCompleted();
+    syncSettingsToggles();
+  });
+
+  // ===== Global click closes all dropdowns =====
+  document.addEventListener('click', closeAllDropdowns);
 
   // ===== Standard nav =====
   document.getElementById('btn-prev').addEventListener('click', prevMonth);
@@ -913,9 +1071,9 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      viewDropdown.classList.add('hidden');
-      viewBtn.setAttribute('aria-expanded', 'false');
+      closeAllDropdowns();
       closeModal();
+      closeSettingsModal();
     }
   });
   document.getElementById('modal').addEventListener('keydown', e => {
@@ -927,6 +1085,18 @@ function init() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(renderCalendar, 150);
   });
+}
+
+function closeAllDropdowns() {
+  const viewDropdown    = document.getElementById('view-dropdown');
+  const viewBtn         = document.getElementById('btn-view-month');
+  const settingsDropdown = document.getElementById('settings-dropdown');
+  const settingsBtn     = document.getElementById('btn-settings');
+
+  if (viewDropdown)     { viewDropdown.classList.add('hidden');     }
+  if (viewBtn)          { viewBtn.setAttribute('aria-expanded', 'false'); }
+  if (settingsDropdown) { settingsDropdown.classList.add('hidden'); }
+  if (settingsBtn)      { settingsBtn.setAttribute('aria-expanded', 'false'); }
 }
 
 document.addEventListener('DOMContentLoaded', init);

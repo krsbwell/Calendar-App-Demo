@@ -31,10 +31,44 @@
       <button class="hdr-icon" aria-label="Help">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
       </button>
-      <button class="hdr-icon" aria-label="Settings">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-      </button>
-      <button id="btn-view-month" class="hdr-view-dropdown">Month <span class="dropdown-caret">&#9662;</span></button>
+
+      <!-- Settings gear with dropdown -->
+      <div class="hdr-settings-wrap">
+        <button class="hdr-icon" id="btn-settings" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+        <div id="settings-dropdown" class="hidden" role="menu">
+          <button class="settings-opt" id="sopt-settings" role="menuitem">Settings</button>
+          <button class="settings-opt" id="sopt-trash"    role="menuitem">Trash</button>
+          <button class="settings-opt" id="sopt-appearance" role="menuitem">Appearance</button>
+          <button class="settings-opt" id="sopt-print"   role="menuitem">Print</button>
+          <button class="settings-opt" id="sopt-addons"  role="menuitem">Get add-ons</button>
+        </div>
+      </div>
+
+      <!-- View dropdown -->
+      <div class="hdr-view-month-wrap">
+        <button id="btn-view-month" class="hdr-view-dropdown" aria-haspopup="menu" aria-expanded="false">Month <span class="dropdown-caret">&#9662;</span></button>
+        <div id="view-dropdown" class="hidden" role="menu">
+          <button class="view-opt" data-view="day"      role="menuitem">Day<span class="view-key">D</span></button>
+          <button class="view-opt" data-view="week"     role="menuitem">Week<span class="view-key">W</span></button>
+          <button class="view-opt view-opt-active" data-view="month" role="menuitem">Month<span class="view-key">M</span></button>
+          <button class="view-opt" data-view="year"     role="menuitem">Year<span class="view-key">Y</span></button>
+          <button class="view-opt" data-view="schedule" role="menuitem">Schedule<span class="view-key">A</span></button>
+          <button class="view-opt" data-view="4days"    role="menuitem">4 days<span class="view-key">X</span></button>
+          <div class="view-dd-divider"></div>
+          <button class="view-toggle-opt" id="toggle-weekends"  role="menuitemcheckbox" aria-checked="true">
+            <span class="view-toggle-icon">&#10003;</span>Show weekends
+          </button>
+          <button class="view-toggle-opt" id="toggle-declined"  role="menuitemcheckbox" aria-checked="true">
+            <span class="view-toggle-icon">&#10003;</span>Show declined events
+          </button>
+          <button class="view-toggle-opt" id="toggle-completed" role="menuitemcheckbox" aria-checked="true">
+            <span class="view-toggle-icon">&#10003;</span>Show completed tasks
+          </button>
+        </div>
+      </div>
+
       <div class="hdr-view-group">
         <button class="hdr-view-btn hdr-view-active" aria-label="Month view" aria-pressed="true" title="Month view">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
@@ -43,7 +77,7 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
         </button>
       </div>
-      <button class="hdr-upgrade">Upgrade</button>
+
       <button class="hdr-icon" aria-label="Google apps">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
       </button>
@@ -58,7 +92,6 @@
     <!-- ===== Sidebar ===== -->
     <aside id="sidebar">
 
-      <!-- + Create button -->
       <div id="sidebar-create-wrap">
         <button id="btn-create">
           <span class="create-icon">+</span>
@@ -67,7 +100,6 @@
         </button>
       </div>
 
-      <!-- Mini calendar -->
       <div id="mini-cal">
         <div id="mini-cal-header">
           <span id="mini-cal-label"></span>
@@ -82,13 +114,11 @@
         <div id="mini-cal-grid"></div>
       </div>
 
-      <!-- Search for people -->
       <div id="sidebar-people-search">
         <svg class="people-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
         <span>Search for people</span>
       </div>
 
-      <!-- Booking pages -->
       <div class="sidebar-row">
         <span class="sidebar-row-text">Booking pages</span>
         <button class="sidebar-icon-btn" aria-label="Add booking page">+</button>
@@ -96,7 +126,6 @@
 
       <div class="sidebar-divider"></div>
 
-      <!-- My calendars -->
       <div class="sidebar-section-header">
         <span class="sidebar-section-title">My calendars</span>
         <button class="sidebar-icon-btn sidebar-collapse-btn" aria-label="Collapse My calendars">&#8963;</button>
@@ -116,7 +145,6 @@
         </li>
       </ul>
 
-      <!-- Other calendars -->
       <div class="sidebar-section-header">
         <span class="sidebar-section-title">Other calendars</span>
         <button class="sidebar-icon-btn" aria-label="Add other calendar">+</button>
@@ -141,7 +169,58 @@
 
   </div>
 
-  <!-- ===== Modal ===== -->
+  <!-- ===== Settings Modal ===== -->
+  <div id="settings-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div id="settings-panel">
+      <div id="settings-header">
+        <h2 id="settings-title">Settings</h2>
+        <button id="btn-settings-close" aria-label="Close settings">&#10005;</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-row">
+          <span class="settings-label">Theme</span>
+          <select id="settings-theme-select">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Default view</span>
+          <select id="settings-default-view-select">
+            <option value="month">Month</option>
+            <option value="week">Week</option>
+            <option value="day">Day</option>
+            <option value="year">Year</option>
+            <option value="schedule">Schedule</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Week starts on</span>
+          <select id="settings-week-start-select">
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Show weekends</span>
+          <button class="settings-toggle-btn" id="settings-weekends-btn" aria-pressed="true">On</button>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Show declined events</span>
+          <button class="settings-toggle-btn" id="settings-declined-btn" aria-pressed="true">On</button>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Show completed tasks</span>
+          <button class="settings-toggle-btn" id="settings-completed-btn" aria-pressed="true">On</button>
+        </div>
+      </div>
+      <div id="settings-footer">
+        <button id="btn-settings-done" class="btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Event Modal ===== -->
   <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div id="modal">
       <h2 id="modal-title">Add Event</h2>
@@ -175,6 +254,15 @@
         <div class="field">
           <label for="event-desc">Description</label>
           <textarea id="event-desc" rows="3" maxlength="500" placeholder="Optional description"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="event-status">Status</label>
+          <select id="event-status">
+            <option value="normal">Normal</option>
+            <option value="declined">Declined</option>
+            <option value="completed">Completed</option>
+          </select>
         </div>
 
         <div class="field">
