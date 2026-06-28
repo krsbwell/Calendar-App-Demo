@@ -9,6 +9,7 @@ let currentYear;
 let currentMonth;
 let events = [];
 let editingId = null;
+let modalTrigger = null;
 
 // ===== LocalStorage =====
 
@@ -108,6 +109,8 @@ function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = '';
   document.getElementById('month-label').textContent = formatMonthLabel(currentYear, currentMonth);
+  const liveEl = document.getElementById('cal-live');
+  if (liveEl) liveEl.textContent = formatMonthLabel(currentYear, currentMonth);
 
   const todayStr = getTodayStr();
   const cells = buildGridCells(currentYear, currentMonth, true);
@@ -139,7 +142,13 @@ function renderMiniCalendar() {
     if (!isCurrentMonth) cell.classList.add('mini-outside');
     if (dateStr === todayStr) cell.classList.add('mini-today');
     cell.textContent = day;
-    cell.setAttribute('aria-label', dateStr);
+    const miniLabel = new Date(dateStr + 'T00:00:00')
+      .toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+    cell.setAttribute('aria-label', miniLabel);
+    cell.setAttribute('tabindex', '0');
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell.click(); }
+    });
     cell.addEventListener('click', () => {
       currentYear  = year;
       currentMonth = month;
@@ -154,7 +163,9 @@ function buildDayCell(dateStr, day, isCurrentMonth, isToday) {
   const cell = document.createElement('div');
   cell.className = 'day-cell';
   cell.setAttribute('role', 'gridcell');
-  cell.setAttribute('aria-label', dateStr);
+  const cellLabel = new Date(dateStr + 'T00:00:00')
+    .toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  cell.setAttribute('aria-label', cellLabel);
 
   if (!isCurrentMonth) cell.classList.add('outside');
   if (isToday) cell.classList.add('today');
@@ -178,7 +189,11 @@ function buildDayCell(dateStr, day, isCurrentMonth, isToday) {
   renderEventPills(cell, dateStr);
 
   if (isCurrentMonth) {
+    cell.setAttribute('tabindex', '0');
     cell.addEventListener('click', () => openAddModal(dateStr));
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAddModal(dateStr); }
+    });
   }
 
   return cell;
@@ -231,6 +246,7 @@ function renderEventPills(cell, dateStr) {
 // ===== Modal =====
 
 function openAddModal(dateStr) {
+  modalTrigger = document.activeElement;
   editingId = null;
   document.getElementById('modal-title').textContent = 'Add Event';
   resetForm();
@@ -241,6 +257,7 @@ function openAddModal(dateStr) {
 }
 
 function openEditModal(ev) {
+  modalTrigger = document.activeElement;
   editingId = ev.id;
   document.getElementById('modal-title').textContent = 'Edit Event';
   resetForm();
@@ -268,6 +285,7 @@ function closeModal() {
   clearErrors();
   resetForm();
   editingId = null;
+  if (modalTrigger) { modalTrigger.focus(); modalTrigger = null; }
 }
 
 function resetForm() {

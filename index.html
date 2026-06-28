@@ -8,6 +8,8 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
+  <a href="#calendar-grid" class="skip-link">Skip to calendar</a>
+  <div id="cal-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
   <!-- ===== Full-Width Top Header ===== -->
   <header id="top-header">
@@ -34,10 +36,10 @@
       </button>
       <button id="btn-view-month" class="hdr-view-dropdown">Month <span class="dropdown-caret">&#9662;</span></button>
       <div class="hdr-view-group">
-        <button class="hdr-view-btn hdr-view-active" aria-label="Month view" title="Month view">
+        <button class="hdr-view-btn hdr-view-active" aria-label="Month view" aria-pressed="true" title="Month view">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
         </button>
-        <button class="hdr-view-btn" aria-label="Tasks view" title="Tasks">
+        <button class="hdr-view-btn" aria-label="Tasks view" aria-pressed="false" title="Tasks">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
         </button>
       </div>
@@ -46,7 +48,7 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
       </button>
       <button id="btn-theme" aria-label="Switch to light mode">&#9728;</button>
-      <div class="hdr-avatar" title="Account">K</div>
+      <div class="hdr-avatar" aria-hidden="true">K</div>
     </div>
   </header>
 
@@ -124,7 +126,7 @@
     </aside>
 
     <!-- ===== Main ===== -->
-    <div id="main">
+    <main id="main">
       <div id="day-headers" aria-hidden="true">
         <span>Sun</span>
         <span>Mon</span>
@@ -135,7 +137,7 @@
         <span>Sat</span>
       </div>
       <div id="calendar-grid" role="grid" aria-label="Calendar"></div>
-    </div>
+    </main>
 
   </div>
 
