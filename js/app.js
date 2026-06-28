@@ -61,7 +61,7 @@ function getEventsForDate(dateStr) {
     });
 }
 
-function buildGridCells(year, month) {
+function buildGridCells(year, month, strict = false) {
   const firstDay = getFirstDayOfWeek(year, month);
   const daysInMonth = getDaysInMonth(year, month);
   const cells = [];
@@ -79,11 +79,14 @@ function buildGridCells(year, month) {
     cells.push({ year, month, day: d, isCurrentMonth: true });
   }
 
-  // Pad end with leading days of next month to fill exactly 42 cells
+  // Pad end with leading days of next month — variable rows (5 or 6 weeks)
+  const totalCells = strict
+    ? Math.ceil((firstDay + daysInMonth) / 7) * 7
+    : 42;
   const nextMonth = month === 11 ? 0 : month + 1;
   const nextYear  = month === 11 ? year + 1 : year;
   let nextDay = 1;
-  while (cells.length < 42) {
+  while (cells.length < totalCells) {
     cells.push({ year: nextYear, month: nextMonth, day: nextDay++, isCurrentMonth: false });
   }
 
@@ -107,7 +110,7 @@ function renderCalendar() {
   document.getElementById('month-label').textContent = formatMonthLabel(currentYear, currentMonth);
 
   const todayStr = getTodayStr();
-  const cells = buildGridCells(currentYear, currentMonth);
+  const cells = buildGridCells(currentYear, currentMonth, true);
 
   cells.forEach(({ year, month, day, isCurrentMonth }) => {
     const dateStr = formatDateStr(year, month, day);
@@ -162,7 +165,14 @@ function buildDayCell(dateStr, day, isCurrentMonth, isToday) {
 
   const numEl = document.createElement('span');
   numEl.className = 'day-number';
-  numEl.textContent = day;
+  if (day === 1) {
+    const [y, m] = dateStr.split('-').map(Number);
+    const abbr = new Date(y, m - 1, 1).toLocaleString('default', { month: 'short' });
+    numEl.textContent = abbr + ' ' + day;
+    numEl.classList.add('day-number--month');
+  } else {
+    numEl.textContent = day;
+  }
   cell.appendChild(numEl);
 
   renderEventPills(cell, dateStr);
@@ -482,6 +492,10 @@ function init() {
   currentYear  = today.getFullYear();
   currentMonth = today.getMonth();
 
+  // Populate the logo badge with today's date
+  const logoDateEl = document.getElementById('logo-date');
+  if (logoDateEl) logoDateEl.textContent = today.getDate();
+
   seedDemoData();
   loadTheme();
   renderCalendar();
@@ -492,6 +506,10 @@ function init() {
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
   document.getElementById('mini-prev').addEventListener('click', prevMonth);
   document.getElementById('mini-next').addEventListener('click', nextMonth);
+
+  // + Create opens add modal for today
+  const btnCreate = document.getElementById('btn-create');
+  if (btnCreate) btnCreate.addEventListener('click', () => openAddModal(getTodayStr()));
 
   document.getElementById('event-form').addEventListener('submit', handleFormSubmit);
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
