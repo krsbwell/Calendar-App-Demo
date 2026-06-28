@@ -10,6 +10,7 @@ let currentMonth;
 let events = [];
 let editingId = null;
 let modalTrigger = null;
+let showWeekends = true;
 
 // ===== LocalStorage =====
 
@@ -450,6 +451,32 @@ function seedDemoData() {
   localStorage.setItem('calendar_seeded', '1');
 }
 
+// ===== Weekends Toggle =====
+
+function loadWeekends() {
+  showWeekends = localStorage.getItem('calendar_show_weekends') !== 'false';
+  applyWeekendsClass();
+  syncWeekendsToggle();
+}
+
+function applyWeekendsClass() {
+  document.documentElement.classList.toggle('hide-weekends', !showWeekends);
+}
+
+function syncWeekendsToggle() {
+  const btn = document.getElementById('toggle-weekends');
+  if (!btn) return;
+  btn.classList.toggle('unchecked', !showWeekends);
+  btn.setAttribute('aria-checked', showWeekends ? 'true' : 'false');
+}
+
+function toggleWeekends() {
+  showWeekends = !showWeekends;
+  localStorage.setItem('calendar_show_weekends', showWeekends);
+  applyWeekendsClass();
+  syncWeekendsToggle();
+}
+
 // ===== Theme =====
 
 function loadTheme() {
@@ -516,7 +543,47 @@ function init() {
 
   seedDemoData();
   loadTheme();
+  loadWeekends();
   renderCalendar();
+
+  // ===== View Dropdown =====
+  const viewDropdown = document.getElementById('view-dropdown');
+  const viewBtn = document.getElementById('btn-view-month');
+
+  viewBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = !viewDropdown.classList.contains('hidden');
+    viewDropdown.classList.toggle('hidden');
+    viewBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+  });
+
+  document.addEventListener('click', () => {
+    if (!viewDropdown.classList.contains('hidden')) {
+      viewDropdown.classList.add('hidden');
+      viewBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  viewDropdown.addEventListener('click', e => e.stopPropagation());
+
+  document.querySelectorAll('.view-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewDropdown.classList.add('hidden');
+      viewBtn.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  document.getElementById('toggle-weekends').addEventListener('click', toggleWeekends);
+
+  ['toggle-declined', 'toggle-completed'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', () => {
+      const checked = el.getAttribute('aria-checked') === 'true';
+      el.setAttribute('aria-checked', checked ? 'false' : 'true');
+      el.classList.toggle('unchecked', checked);
+    });
+  });
 
   document.getElementById('btn-prev').addEventListener('click', prevMonth);
   document.getElementById('btn-next').addEventListener('click', nextMonth);
@@ -540,9 +607,13 @@ function init() {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
 
-  // Escape closes modal; focus trap on Tab
+  // Escape closes modal and dropdown; focus trap on Tab
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+      viewDropdown.classList.add('hidden');
+      viewBtn.setAttribute('aria-expanded', 'false');
+      closeModal();
+    }
   });
   document.getElementById('modal').addEventListener('keydown', e => {
     if (e.key === 'Tab') trapFocus(e);

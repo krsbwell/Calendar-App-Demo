@@ -188,6 +188,11 @@ ul { list-style: none; }
 }
 .hdr-icon:hover { background: var(--color-hover); }
 
+.hdr-view-month-wrap {
+  position: relative;
+  margin: 0 4px;
+}
+
 .hdr-view-dropdown {
   display: flex;
   align-items: center;
@@ -198,11 +203,86 @@ ul { list-style: none; }
   background: transparent;
   color: var(--color-text-primary);
   font-size: 0.88rem;
-  margin: 0 4px;
   transition: background var(--transition);
 }
 .hdr-view-dropdown:hover { background: var(--color-hover); }
 .dropdown-caret { font-size: 0.7rem; color: var(--color-text-secondary); }
+
+/* ===== View Dropdown Panel ===== */
+#view-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 28px rgba(0,0,0,0.35);
+  min-width: 230px;
+  z-index: 100;
+  padding: 6px 0;
+}
+
+.view-opt {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background var(--transition);
+}
+.view-opt:hover { background: var(--color-hover); }
+.view-opt-active { font-weight: 600; }
+
+.view-key {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.view-dd-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0;
+}
+
+.view-toggle-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background var(--transition);
+}
+.view-toggle-opt:hover { background: var(--color-hover); }
+
+.view-toggle-icon {
+  width: 16px;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+.view-toggle-opt.unchecked .view-toggle-icon { visibility: hidden; }
+
+/* ===== Hide Weekends Mode ===== */
+.hide-weekends #day-headers {
+  grid-template-columns: repeat(5, 1fr);
+}
+.hide-weekends #day-headers span:first-child,
+.hide-weekends #day-headers span:last-child { display: none; }
+.hide-weekends #calendar-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+.hide-weekends .day-cell.weekend { display: none; }
 
 .hdr-view-group {
   display: flex;
