@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Calendar body -->
+  <rect x="2" y="5" width="28" height="25" rx="4" ry="4" fill="#ffffff" stroke="#D1D9E0" stroke-width="1.5"/>
+  <!-- Header strip -->
+  <rect x="2" y="5" width="28" height="9" rx="4" ry="4" fill="#4A90D9"/>
+  <!-- Cover top-rounded corners of strip bottom -->
+  <rect x="2" y="10" width="28" height="4" fill="#4A90D9"/>
+  <!-- Ring left -->
+  <rect x="9" y="2" width="3" height="7" rx="1.5" fill="#4A90D9"/>
+  <!-- Ring right -->
+  <rect x="20" y="2" width="3" height="7" rx="1.5" fill="#4A90D9"/>
+  <!-- Day dots: row 1 -->
+  <circle cx="9"  cy="20" r="2" fill="#4A90D9"/>
+  <circle cx="16" cy="20" r="2" fill="#4A90D9"/>
+  <circle cx="23" cy="20" r="2" fill="#4A90D9"/>
+  <!-- Day dots: row 2 -->
+  <circle cx="9"  cy="27" r="2" fill="#D1D9E0"/>
+  <circle cx="16" cy="27" r="2" fill="#D1D9E0"/>
+</svg>

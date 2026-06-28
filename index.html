@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div id="app">
+    <header id="calendar-header">
+      <div class="header-left">
+        <button id="btn-today">Today</button>
+        <button id="btn-prev" aria-label="Previous month">&#8249;</button>
+        <button id="btn-next" aria-label="Next month">&#8250;</button>
+      </div>
+      <h1 id="month-label"></h1>
+      <button id="btn-theme" aria-label="Switch to dark mode">&#9790;</button>
+    </header>
+
+    <div id="day-headers" aria-hidden="true">
+      <span>Sun</span>
+      <span>Mon</span>
+      <span>Tue</span>
+      <span>Wed</span>
+      <span>Thu</span>
+      <span>Fri</span>
+      <span>Sat</span>
+    </div>
+
+    <div id="calendar-grid" role="grid" aria-label="Calendar"></div>
+  </div>
+
+  <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal">
+      <h2 id="modal-title">Add Event</h2>
+      <form id="event-form" novalidate>
+        <input type="hidden" id="event-id">
+
+        <div class="field">
+          <label for="event-title">Title <span class="required">*</span></label>
+          <input id="event-title" type="text" maxlength="80" autocomplete="off" placeholder="Event title">
+          <span class="field-error" id="err-title" role="alert"></span>
+        </div>
+
+        <div class="field">
+          <label for="event-date">Date <span class="required">*</span></label>
+          <input id="event-date" type="date">
+          <span class="field-error" id="err-date" role="alert"></span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="event-start">Start time</label>
+            <input id="event-start" type="time">
+          </div>
+          <div class="field">
+            <label for="event-end">End time</label>
+            <input id="event-end" type="time">
+          </div>
+        </div>
+        <span class="field-error" id="err-time" role="alert"></span>
+
+        <div class="field">
+          <label for="event-desc">Description</label>
+          <textarea id="event-desc" rows="3" maxlength="500" placeholder="Optional description"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Color</label>
+          <div id="color-picker" role="radiogroup" aria-label="Event color">
+            <label class="color-swatch evt-blue" title="Blue">
+              <input type="radio" name="event-color" value="blue" checked>
+              <span class="sr-only">Blue</span>
+            </label>
+            <label class="color-swatch evt-green" title="Green">
+              <input type="radio" name="event-color" value="green">
+              <span class="sr-only">Green</span>
+            </label>
+            <label class="color-swatch evt-red" title="Red">
+              <input type="radio" name="event-color" value="red">
+              <span class="sr-only">Red</span>
+            </label>
+            <label class="color-swatch evt-orange" title="Orange">
+              <input type="radio" name="event-color" value="orange">
+              <span class="sr-only">Orange</span>
+            </label>
+            <label class="color-swatch evt-purple" title="Purple">
+              <input type="radio" name="event-color" value="purple">
+              <span class="sr-only">Purple</span>
+            </label>
+            <label class="color-swatch evt-teal" title="Teal">
+              <input type="radio" name="event-color" value="teal">
+              <span class="sr-only">Teal</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="modal-actions">
+          <button type="button" id="btn-delete" class="btn-danger hidden">Delete</button>
+          <div class="modal-actions-right">
+            <button type="button" id="btn-cancel">Cancel</button>
+            <button type="submit" id="btn-save" class="btn-primary">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

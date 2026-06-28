@@ -1,0 +1,537 @@
+/* ===== Custom Properties ===== */
+:root {
+  --color-primary:       #4A90D9;
+  --color-primary-dark:  #2C6FAC;
+  --color-bg:            #F0F4F8;
+  --color-surface:       #FFFFFF;
+  --color-border:        #D1D9E0;
+  --color-text-primary:  #1A202C;
+  --color-text-secondary:#718096;
+  --color-today-ring:    #4A90D9;
+  --color-today-bg:      #EBF4FF;
+  --color-danger:        #E53E3E;
+  --color-danger-dark:   #C53030;
+  --color-weekend:       #F7FAFC;
+  --color-outside:       #F7FAFC;
+  --radius:              6px;
+  --shadow:              0 8px 30px rgba(0,0,0,0.18);
+  --transition:          0.15s ease;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+  --color-bg:             #0F172A;
+  --color-surface:        #1E293B;
+  --color-border:         #334155;
+  --color-text-primary:   #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-today-bg:       #1E3A5F;
+  --color-weekend:        #182035;
+  --color-outside:        #182035;
+}
+
+[data-theme="dark"] .day-cell:hover { background: #253048; border-color: #475569; }
+[data-theme="dark"] .day-cell.outside:hover { background: #182035; }
+[data-theme="dark"] .day-cell.weekend:hover { background: #1f2d45; }
+[data-theme="dark"] .day-cell.today:hover { background: #243d63; }
+
+[data-theme="dark"] .field input[type="text"],
+[data-theme="dark"] .field input[type="date"],
+[data-theme="dark"] .field input[type="time"],
+[data-theme="dark"] .field textarea {
+  background: #0F172A;
+  color: #F1F5F9;
+  border-color: #334155;
+  color-scheme: dark;
+}
+
+/* ===== Reset ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+button { cursor: pointer; font: inherit; border: none; background: none; }
+input, textarea { font: inherit; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== App Layout ===== */
+#app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 16px;
+}
+
+/* ===== Header ===== */
+#calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#btn-today {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background var(--transition), border-color var(--transition);
+}
+#btn-today:hover { background: var(--color-bg); border-color: var(--color-primary); }
+
+#btn-theme {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  margin-left: auto;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+#btn-theme:hover { background: var(--color-bg); border-color: var(--color-primary); color: var(--color-primary); }
+
+#btn-prev, #btn-next {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  transition: background var(--transition), color var(--transition);
+}
+#btn-prev:hover, #btn-next:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+#month-label {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-left: 6px;
+}
+
+/* ===== Day-of-Week Header ===== */
+#day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 3px;
+}
+
+#day-headers span {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding: 6px 0;
+}
+
+/* ===== Calendar Grid ===== */
+#calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+/* ===== Day Cells ===== */
+.day-cell {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  min-height: 110px;
+  padding: 7px 6px 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--transition), border-color var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+.day-cell:hover { background: #f5f8fb; border-color: #b8c4d0; }
+
+.day-cell.outside {
+  background: var(--color-outside);
+  cursor: default;
+}
+.day-cell.outside:hover { background: var(--color-outside); border-color: var(--color-border); }
+
+.day-cell.weekend { background: var(--color-weekend); }
+.day-cell.weekend:hover { background: #eef2f6; }
+
+.day-cell.today {
+  border-color: var(--color-today-ring);
+  background: var(--color-today-bg);
+}
+.day-cell.today:hover { background: #dbeafe; border-color: var(--color-primary-dark); }
+
+.day-cell.outside .day-number {
+  color: var(--color-text-secondary);
+  opacity: 0.4;
+}
+
+.day-number {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+
+.day-cell.today .day-number {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ===== Event Pills Container ===== */
+.event-pills-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== Event Pills (Desktop) ===== */
+.event-pill {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 3px;
+  padding: 2px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  line-height: 1.45;
+  transition: filter var(--transition);
+  width: 100%;
+}
+.event-pill:hover { filter: brightness(0.92); }
+
+.evt-blue   { background: #DBEAFE; color: #1D4ED8; }
+.evt-green  { background: #D1FAE5; color: #065F46; }
+.evt-red    { background: #FEE2E2; color: #991B1B; }
+.evt-orange { background: #FFEDD5; color: #9A3412; }
+.evt-purple { background: #EDE9FE; color: #5B21B6; }
+.evt-teal   { background: #CCFBF1; color: #134E4A; }
+
+.evt-overflow {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding: 1px 4px;
+  cursor: default;
+}
+
+/* ===== Modal Overlay ===== */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+#modal-overlay.hidden { display: none !important; }
+
+/* ===== Modal Dialog ===== */
+#modal {
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px 24px 20px;
+}
+
+#modal h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 22px;
+  color: var(--color-text-primary);
+}
+
+/* ===== Form Fields ===== */
+.field {
+  margin-bottom: 14px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 0;
+}
+.field-row .field { margin-bottom: 0; }
+
+#err-time {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-danger);
+  margin-top: 3px;
+  margin-bottom: 10px;
+  min-height: 1em;
+}
+
+.field > label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin-bottom: 5px;
+}
+.required { color: var(--color-danger); }
+
+.field input[type="text"],
+.field input[type="date"],
+.field input[type="time"],
+.field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  background: #fff;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+.field input.invalid,
+.field textarea.invalid {
+  border-color: var(--color-danger);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 76px;
+}
+
+.field-error {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-danger);
+  margin-top: 4px;
+  min-height: 1.1em;
+}
+
+/* ===== Color Picker ===== */
+#color-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.color-swatch {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+.color-swatch input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.color-swatch:has(input:checked) {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-primary);
+  transform: scale(1.15);
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch:has(input:checked):hover { transform: scale(1.15); }
+
+.color-swatch.evt-blue   { background: #3B82F6; }
+.color-swatch.evt-green  { background: #10B981; }
+.color-swatch.evt-red    { background: #EF4444; }
+.color-swatch.evt-orange { background: #F97316; }
+.color-swatch.evt-purple { background: #8B5CF6; }
+.color-swatch.evt-teal   { background: #14B8A6; }
+
+/* ===== Modal Actions ===== */
+#modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  gap: 8px;
+}
+.modal-actions-right {
+  display: flex;
+  gap: 8px;
+}
+
+#btn-cancel {
+  padding: 8px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background var(--transition), border-color var(--transition);
+}
+#btn-cancel:hover { background: var(--color-bg); border-color: #aab4be; }
+
+.btn-primary {
+  padding: 8px 20px;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  transition: background var(--transition);
+}
+.btn-primary:hover { background: var(--color-primary-dark); }
+
+.btn-danger {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-danger);
+  border: 1.5px solid var(--color-danger);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition);
+}
+.btn-danger:hover { background: var(--color-danger); color: #fff; }
+
+.hidden { display: none !important; }
+
+/* ===== Responsive: Tablet / Mobile (≤767px) ===== */
+@media (max-width: 767px) {
+  #app { padding: 10px 8px; }
+
+  #calendar-header { gap: 8px; margin-bottom: 10px; }
+  #month-label { font-size: 1.05rem; }
+  #btn-today { padding: 5px 10px; font-size: 0.8rem; }
+
+  #day-headers span { font-size: 0.65rem; }
+
+  #calendar-grid { gap: 2px; }
+
+  .day-cell {
+    min-height: 64px;
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  .day-number {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+  }
+
+  /* Pills become dots on mobile */
+  .event-pills-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .event-pill {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+    flex-shrink: 0;
+  }
+
+  /* Solid dot colors on mobile */
+  .event-pill.evt-blue   { background: #3B82F6; }
+  .event-pill.evt-green  { background: #10B981; }
+  .event-pill.evt-red    { background: #EF4444; }
+  .event-pill.evt-orange { background: #F97316; }
+  .event-pill.evt-purple { background: #8B5CF6; }
+  .event-pill.evt-teal   { background: #14B8A6; }
+
+  .evt-overflow { font-size: 0.6rem; padding: 0 2px; }
+
+  /* Modal slides up from bottom on mobile */
+  #modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  #modal {
+    border-radius: 14px 14px 0 0;
+    max-width: 100%;
+    max-height: 95vh;
+    padding: 20px 16px 24px;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .field-row .field { margin-bottom: 14px; }
+}
+
+@media (max-width: 480px) {
+  #day-headers span { font-size: 0.6rem; letter-spacing: 0; }
+  .day-number { font-size: 0.68rem; width: 18px; height: 18px; }
+  .day-cell { min-height: 52px; }
+}
